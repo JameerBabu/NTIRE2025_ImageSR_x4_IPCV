@@ -1,0 +1,2 @@
+# NTIRE2025_ImageSR_x4_IPCV
+NTIRE 2025 x4 challenge
