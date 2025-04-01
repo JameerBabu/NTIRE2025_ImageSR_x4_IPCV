@@ -1,6 +1,6 @@
 import os
 import torch
-from models.team05_ipcv import HMA # Ensure the correct model import
+from models.team05_IPCV import HMA # Ensure the correct model import
 
 def load_model(device):
     model = HMA(
