@@ -1,1 +1,5 @@
 https://drive.google.com/file/d/1SjGmEqbKmMSdYlbsdMBgJ0RFsiHWhwKG/view?usp=drive_link
+
+Model link - https://drive.google.com/file/d/1nOPq2g2OzOpnXicZdNhg-nvi2vWruCpu/view?usp=sharing
+
+you can download using wget or directly.

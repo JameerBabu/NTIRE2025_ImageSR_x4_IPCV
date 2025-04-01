@@ -26,7 +26,7 @@ def load_model(device):
 
 def process_images(model, device):
     # changes these paths
-    data_root = "/content/drive/MyDrive/NTIRE/Validation/Efficient_Image_Super_Resolution/DIV2K_LSDIR_test_LR/DIV2K_LSDIR_test_LR"
+    data_root = "/content/drive/MyDrive/NTIRE/Test/"
     save_path = "results/"
     os.makedirs(save_path, exist_ok=True)
     
