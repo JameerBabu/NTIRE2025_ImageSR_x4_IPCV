@@ -1,95 +1,50 @@
-import os.path
-import logging
+import os
 import torch
-import argparse
-import json
-import glob
+from models.team05_ipcv import HMA # Ensure the correct model import
 
-from pprint import pprint
-from utils.model_summary import get_model_flops
-from utils import utils_logger
-from utils import utils_image as util
-
-
-def select_model(args, device):
-    # Model ID is assigned according to the order of the submissions.
-    # Different networks are trained with input range of either [0,1] or [0,255]. The range is determined manually.
-    model_id = args.model_id
-    if model_id == 0:
-        # DAT baseline, ICCV 2023
-        from models.team00_DAT import main as DAT
-        name = f"{model_id:02}_DAT_baseline"
-        model_path = os.path.join('model_zoo', 'team05_ipcv.pth')
-        model_func = DAT
-    else:
-        raise NotImplementedError(f"Model {model_id} is not implemented.")
-
-    return model_func, model_path, name
-
-
-def run(model_func, model_name, model_path, device, args, mode="test"):
-    # --------------------------------
-    # dataset path
-    # --------------------------------
-    if mode == "valid":
-        data_path = args.valid_dir
-    elif mode == "test":
-        data_path = args.test_dir
-    assert data_path is not None, "Please specify the dataset path for validation or test."
+def load_model(device):
+    model = HiT_SRF(
+        upscale=4,
+        in_chans=3,
+        img_size=64,
+        base_win_size=[8,8],
+        img_range=1.0,
+        depths=[6, 6, 6, 6],
+        embed_dim=60,
+        num_heads=[6, 6, 6, 6],
+        expansion_factor=2,
+        resi_connection='1conv',
+        hier_win_ratios=[0.5,1, 2, 4, 6,8],
+        upsampler='pixelshuffledirect'
+    )
     
-    save_path = os.path.join(args.save_dir, model_name, mode)
-    util.mkdir(save_path)
+    model_path = "./model_zoo/team05_ipcv.pth"
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    model.to(device)
+    return model
 
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
-
-    start.record()
-    model_func(model_dir=model_path, input_path=data_path, output_path=save_path, device=device)
-    end.record()
-    torch.cuda.synchronize()
-    print(f"Model {model_name} runtime (Including I/O): {start.elapsed_time(end)} ms")
-
-
-def main(args):
-    utils_logger.logger_info("NTIRE2025-ImageSRx4", log_path="NTIRE2025-ImageSRx4.log")
-    logger = logging.getLogger("NTIRE2025-ImageSRx4")
-
-    # --------------------------------
-    # basic settings
-    # --------------------------------
-    torch.cuda.current_device()
-    torch.cuda.empty_cache()
-    torch.backends.cudnn.benchmark = False
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    json_dir = os.path.join(os.getcwd(), "results.json")
-    if not os.path.exists(json_dir):
-        results = dict()
-    else:
-        with open(json_dir, "r") as f:
-            results = json.load(f)
-
-    # --------------------------------
-    # load model
-    # --------------------------------
-    model_func, model_path, model_name = select_model(args, device)
-    logger.info(model_name)
-
-    # if model not in results:
-    if args.valid_dir is not None:
-        run(model_func, model_name, model_path, device, args, mode="valid")
+def process_images(model, device):
+    # changes these paths
+    data_root = "/content/drive/MyDrive/NTIRE/Validation/Efficient_Image_Super_Resolution/DIV2K_LSDIR_test_LR/DIV2K_LSDIR_test_LR"
+    save_path = "results/"
+    os.makedirs(save_path, exist_ok=True)
+    
+    for img_name in os.listdir(data_root):
+        img_path = os.path.join(data_root, img_name)
+        img = util.imread_uint(img_path, n_channels=3)
+        img = util.uint2tensor4(img, 1.0).to(device)
         
-    if args.test_dir is not None:
-        run(model_func, model_name, model_path, device, args, mode="test")
+        with torch.no_grad():
+            output = model(img)
+        output_img = util.tensor2uint(output, 1.0)
+        util.imsave(output_img, os.path.join(save_path, img_name))
+
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model(device)
+    process_images(model, device)
+    print("Processing complete. Results saved.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("NTIRE2025-ImageSRx4")
-    parser.add_argument("--valid_dir", default=None, type=str, help="Path to the validation set")
-    parser.add_argument("--test_dir", default=None, type=str, help="Path to the test set")
-    parser.add_argument("--save_dir", default="NTIRE2025-ImageSRx4/results", type=str)
-    parser.add_argument("--model_id", default=0, type=int)
-
-    args = parser.parse_args()
-    pprint(args)
-
-    main(args)
+    main()
