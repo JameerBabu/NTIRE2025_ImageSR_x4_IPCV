@@ -3,18 +3,18 @@ import torch
 from models.team05_ipcv import HMA # Ensure the correct model import
 
 def load_model(device):
-    model = HiT_SRF(
+    model = HMA(
         upscale=4,
         in_chans=3,
         img_size=64,
-        base_win_size=[8,8],
+        window_size=16,
+        interval_size=4,
         img_range=1.0,
-        depths=[6, 6, 6, 6],
-        embed_dim=60,
-        num_heads=[6, 6, 6, 6],
-        expansion_factor=2,
+        depths=[6, 6, 6, 6,6,6],
+        embed_dim=180,
+        num_heads=[6, 6, 6, 6,6,6],
+        mlp_ratio=2,
         resi_connection='1conv',
-        hier_win_ratios=[0.5,1, 2, 4, 6,8],
         upsampler='pixelshuffledirect'
     )
     
