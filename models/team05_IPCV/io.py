@@ -10,7 +10,7 @@ from utils.model_summary import get_model_flops
 from utils import utils_logger
 from utils import utils_image as util
 
-from models.team05_IPCV.model import HMA
+from .model import HMA
 
 def forward(img_lq, model, tile=None, tile_overlap=32, scale=4):
     if tile is None:
