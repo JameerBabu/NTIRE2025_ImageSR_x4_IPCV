@@ -1,22 +1,31 @@
 import os
 import torch
-from models.team05_IPCV.model import HMA # Ensure the correct model import
+from models.team05_IPCV.model import HMAModel # Ensure the correct model import
 
 def load_model(device):
-    model = HMA(
-        upscale=4,
-        in_chans=3,
-        img_size=64,
-        window_size=16,
-        interval_size=4,
-        img_range=1.0,
-        depths=[6, 6, 6, 6,6,6],
-        embed_dim=180,
-        num_heads=[6, 6, 6, 6,6,6],
-        mlp_ratio=2,
-        resi_connection='1conv',
-        upsampler='pixelshuffledirect'
-    )
+    opt = {
+    'network_g': {
+        'type': 'HMANet',
+        'upscale': 4,
+        'in_chans': 3,
+        'img_size': 64,
+        'window_size': 16,
+        'interval_size': 4,
+        'img_range': 1.0,
+        'depths': [6, 6, 6, 6, 6, 6],
+        'embed_dim': 180,
+        'num_heads': [6, 6, 6, 6, 6, 6],
+        'mlp_ratio': 2,
+        'upsampler': 'pixelshuffle',
+        'resi_connection': '1conv'
+    },
+    'num_gpu': 1,
+    'is_train': False
+}
+
+
+    model = HMAModel(opt)
+
     
     model_path = "./model_zoo/team05_ipcv.pth"
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -42,9 +51,4 @@ def process_images(model, device):
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_model(device)
-    process_images(model, device)
-    print("Processing complete. Results saved.")
-
-if __name__ == "__main__":
-    main()
+  
